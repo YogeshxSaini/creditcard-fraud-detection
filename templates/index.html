@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Credit Card Fraud Detection</title>
+  <style>
+    body { font-family: Arial; max-width: 800px; margin: auto; padding: 20px; }
+    input { width: 80px; margin: 5px; }
+    #result { margin-top: 20px; font-weight: bold; }
+    button { margin-top: 10px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h1>Credit Card Fraud Detection</h1>
+  <p>Enter 30 input values (V1–V28, normalized_amount, normalized_time):</p>
+  <div id="form-container">
+    <form id="fraudForm">
+      <div id="inputs"></div>
+      <button type="submit">Predict</button>
+    </form>
+  </div>
+  <div id="result"></div>
+
+  <script>
+    // Generate input fields dynamically
+    const inputContainer = document.getElementById('inputs');
+    for (let i = 1; i <= 30; i++) {
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.step = 'any';
+      input.name = `f${i}`;
+      input.placeholder = `F${i}`;
+      inputContainer.appendChild(input);
+    }
+
+    document.getElementById('fraudForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const inputs = Array.from(document.querySelectorAll('#inputs input'));
+      const features = inputs.map(input => parseFloat(input.value));
+
+      if (features.includes(NaN)) {
+        document.getElementById('result').textContent = "❌ Please fill in all 30 fields.";
+        return;
+      }
+
+      const response = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ features: [features] })
+      });
+
+      const result = await response.json();
+      if (result.error) {
+        document.getElementById('result').textContent = "❌ Error: " + result.error;
+      } else {
+        const prediction = result.prediction[0];
+        const prob = result.fraud_probability[0];
+        document.getElementById('result').textContent =
+          `✅ Prediction: ${prediction === 1 ? "FRAUD" : "LEGIT"} (Fraud Probability: ${prob.toFixed(4)})`;
+      }
+    });
+  </script>
+</body>
+</html>
+
